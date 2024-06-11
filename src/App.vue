@@ -1,125 +1,118 @@
 <template>
-  <div id="app" class="small-container">
-    <h1>Employees</h1>
-    <employee-form @add:employee="addEmployee" />
-    <employee-table
-      :employees="employees"
-      @delete:employee="deleteEmployee"
-      @edit:employee="editEmployee"
-    />
+  <h2>Composition API VUE3 JS</h2>
+  <div style="padding: 0px 15px">
+    <h4>Using VUEX Store Here</h4>
+    <p style="padding: 0px 10px">Count Variable of store : {{ count }}</p>
+    <div
+      style="
+        display: flex;
+        flex-direction: row;
+        width: 20%;
+        justify-content: space-between;
+      "
+    >
+      <button @click="incrementCount">Increment</button>
+    </div>
+    <div>
+      <h4>Using VUEX Store User Property Here</h4>
+      <div v-if="user">
+        <li v-for="(value, key) in user" :key="key">{{ key }} : {{ value }}</li>
+        <p
+          style="
+            padding-top: 10px;
+            color: blueviolet;
+            font-weight: 700;
+            font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande',
+              'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+            font-size: larger;
+          "
+        >
+          Change User Property
+        </p>
+        <select v-model="changeUser.key" style="width: 120px">
+          <option v-for="(value, key) in user" :value="key">{{ key }}</option>
+        </select>
+        <input
+          :type="userInputType"
+          style="width: 200px"
+          :disabled="changeUser.key === null"
+          v-model="changeUser.value"
+        />
+        <button @click="updateUser">Update User</button>
+      </div>
+      <div v-else>No User Property Found.</div>
+    </div>
+    <p style="padding: 0px 10px">X : {{ api.x }}</p>
+    <div
+      style="
+        display: flex;
+        flex-direction: row;
+        width: 20%;
+        justify-content: space-between;
+      "
+    >
+      <button @click="api.x++">Increment</button>
+      <button @click="api.x--">Decrement</button>
+    </div>
+    <p style="padding: 5px 10px">Y : {{ api.y }}</p>
+    <div
+      style="
+        display: flex;
+        flex-direction: row;
+        width: 20%;
+        justify-content: space-between;
+      "
+    >
+      <button @click="api.y++">Increment</button>
+      <button @click="api.y--">Decrement</button>
+    </div>
+    <h4>Author Name : {{ author.name }}</h4>
+    <p>Published Books : {{ publishedBooks }}</p>
   </div>
 </template>
 
-<script>
-import EmployeeForm from "./components/EmployeeForm.vue";
-import EmployeeTable from "./components/EmployeeTable.vue";
-export default {
-  name: "App",
-  components: {
-    EmployeeTable,
-    EmployeeForm,
-  },
-  data() {
-    return {
-      employees: [
-        {
-          id: 1,
-          name: "Richard Hendricks",
-          email: "richard@piedpiper.com",
-        },
-        {
-          id: 2,
-          name: "Bertram Gilfoyle",
-          email: "gilfoyle@piedpiper.com",
-        },
-        {
-          id: 3,
-          name: "Dinesh Chugtai",
-          email: "dinesh@piedpiper.com",
-        },
-      ],
-    };
-  },
-  methods: {
-    async addEmployee(employee) {
-      try {
-        const lastId =
-          this.employees.length < 1
-            ? 0
-            : this.employees[this.employees.length - 1].id;
-        const id = lastId + 1;
-        employee = { ...employee, id };
-        const response = await fetch(
-          "https://jsonplaceholder.typicode.com/users",
-          {
-            method: "POST",
-            body: JSON.stringify(employee),
-            headers: { "Content-type": "application/json; charset=UTF-8" },
-          }
-        );
-        const data = await response.json();
-        this.employees = [...this.employees, data];
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    async editEmployee(id, updatedEmployee) {
-      console.log(id, updatedEmployee);
-      try {
-        const response = await fetch(
-          `https://jsonplaceholder.typicode.com/users/${id}`,
-          {
-            method: "PUT",
-            body: JSON.stringify(updatedEmployee),
-            headers: { "Content-type": "application/json; charset=UTF-8" },
-          }
-        );
-        const data = await response.json();
-        this.employees = this.employees.map((employee) =>
-          employee.id === id ? data : employee
-        );
-      } catch (error) {
-        console.log(error);
-        console.error(error);
-      }
-    },
-    async deleteEmployee(id) {
-      try {
-        await fetch(`https://jsonplaceholder.typicode.com/users/${id}`, {
-          method: "DELETE",
-        });
-        this.employees = this.employees.filter(
-          (employee) => employee.id !== id
-        );
-      } catch (error) {
-        console.log(error);
-      }
-    },
-    async getEmployees() {
-      try {
-        const response = await fetch(
-          "https://jsonplaceholder.typicode.com/users"
-        );
-        const data = await response.json();
-        this.employees = data;
-      } catch (error) {
-        console.error(error);
-      }
-    },
-  },
-  mounted() {
-    this.getEmployees();
-  },
-};
+<script setup>
+import { computed, reactive, ref, watch } from "vue";
+import { useStore } from "vuex";
+const store = useStore();
+const count = computed(() => store.state.count);
+const incrementCount = computed(() => store.commit("increment"));
+const user = computed(() => store.state.user);
+let changeUser = ref({
+  key: null,
+  value: null,
+});
+const updateUser = computed(() =>
+  store.commit("updateUser", {
+    key: changeUser.value.key,
+    value: changeUser.value.value,
+  })
+);
+const userInputType = computed(() => {
+  const value = user.value[changeUser.value.key];
+  const valueType = typeof value;
+  if (valueType === "number") return "number";
+  else return "text";
+});
+const api = ref({ x: 0, y: 0 });
+const author = reactive({
+  name: "John Doe",
+  books: ["foo", "bar"],
+});
+const publishedBooks = computed(() => {
+  return author.books.length > 0 ? "Yes" : "No";
+});
+watch(
+  () => api.value.x + api.value.y,
+  (sum) => {
+    console.log(`sum of x and y is : ${api.value.x + api.value.y}`);
+  }
+);
 </script>
 
-<style>
-button {
-  background: #009435;
-  border: 1px solid #009435;
-}
-
-.small-container {
-  max-width: 680px;
+<style scoped>
+h2 {
+  width: 100%;
+  text-align: center;
 }
 </style>
